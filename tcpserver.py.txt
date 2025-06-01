@@ -1,0 +1,10 @@
+import socket
+server=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+server.bind(('localhost',12345))
+server.listen()
+conn,adddr=server.accept()
+print("Connected by:",adddr)
+data=conn.recv(1024)
+print("recieved",data.decode())
+conn.sendall(b'hello client')
+conn.close()
