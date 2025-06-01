@@ -1,0 +1,89 @@
+import java.net.*;
+import java.io.*;
+import java.util.Scanner;
+
+public class SimpleUDPClient {
+    public static void main(String[] args) {
+        try {
+            DatagramSocket socket = new DatagramSocket();
+            InetAddress serverAddress = InetAddress.getByName("localhost");
+
+            Scanner scanner = new Scanner(System.in);
+            byte[] sendBuffer;
+            byte[] receiveBuffer = new byte[1024];
+
+            while (true) {
+                System.out.print("Client: ");
+                String msg = scanner.nextLine();
+                sendBuffer = msg.getBytes();
+
+                DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, serverAddress, 5000);
+                socket.send(sendPacket);
+                if (msg.equalsIgnoreCase("exit")) break;
+
+                DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                socket.receive(receivePacket);
+
+                String serverMsg = new String(receivePacket.getData(), 0, receivePacket.getLength());
+                if (serverMsg.equalsIgnoreCase("exit")) break;
+
+                System.out.println("Server: " + serverMsg);
+            }
+
+            socket.close();
+            scanner.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+---------------------
+udpserver
+
+import java.net.*;
+import java.io.*;
+import java.util.Scanner;
+
+public class SimpleUDPServer {
+    public static void main(String[] args) {
+        try {
+            DatagramSocket socket = new DatagramSocket(5000);
+            byte[] receiveBuffer = new byte[1024];
+            byte[] sendBuffer;
+
+            Scanner scanner = new Scanner(System.in);
+            System.out.println("Server started. Waiting for client messages...");
+
+            while (true) {
+                // Receive message from client
+                DatagramPacket receivePacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
+                socket.receive(receivePacket);
+
+                String clientMsg = new String(receivePacket.getData(), 0, receivePacket.getLength());
+                if (clientMsg.equalsIgnoreCase("exit")) break;
+
+                System.out.println("Client: " + clientMsg);
+
+                // Read server response using Scanner
+                System.out.print("Server: ");
+                String serverMsg = scanner.nextLine();
+                sendBuffer = serverMsg.getBytes();
+
+                // Send response to client
+                InetAddress clientAddress = receivePacket.getAddress();
+                int clientPort = receivePacket.getPort();
+
+                DatagramPacket sendPacket = new DatagramPacket(sendBuffer, sendBuffer.length, clientAddress, clientPort);
+                socket.send(sendPacket);
+
+                if (serverMsg.equalsIgnoreCase("exit")) break;
+            }
+
+            socket.close();
+            scanner.close();
+            System.out.println("Server stopped.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
